@@ -1,0 +1,7 @@
+name = Shipping JNE
+description = Provides JNE Shipping Method
+package = Commerce (shipping)
+dependencies[] = commerce
+dependencies[] = commerce_shipping
+core = 7.x
+

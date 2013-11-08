@@ -1,0 +1,133 @@
+<?php
+
+/**
+ * Implements hook_commerce_shipping_method_info().
+ */
+function commerce_shipping_jne_commerce_shipping_method_info() {
+  $shipping_methods = array();
+
+  $shipping_methods['jne_shipping_method'] = array(
+    'title' => t('JNE shipping method'),
+    'description' => t('JNE Shipping Rate'),
+  );
+
+  return $shipping_methods;
+}
+
+/**
+ * Implements hook_commerce_shipping_service_info().
+ */
+function commerce_shipping_jne_commerce_shipping_service_info() {
+  $shipping_services = array();
+
+  $shipping_services['shipping_jne_yes'] = array(
+    'title' => t('JNE Yes'),
+    'description' => t('JNE YES'),
+    'display_title' => t('JNE Yes'),
+    'shipping_method' => 'jne_shipping_method',
+    'price_component' => 'shipping',
+    'callbacks' => array(
+      'rate' => 'commerce_shipping_jne_yes_service_rate',
+      'details_form' => 'commerce_shipping_jne_service_details_form',
+    ),
+  );
+  $shipping_services['shipping_jne_reg'] = array(
+    'title' => t('JNE Reguler'),
+    'description' => t('JNE REG'),
+    'display_title' => t('JNE Reguler'),
+    'shipping_method' => 'jne_shipping_method',
+    'price_component' => 'shipping',
+    'callbacks' => array(
+      'rate' => 'commerce_shipping_jne_reg_service_rate',
+      'details_form' => 'commerce_shipping_jne_service_details_form',
+    ),
+  );
+  $shipping_services['shipping_jne_oke'] = array(
+    'title' => t('JNE Oke'),
+    'description' => t('JNE OKE'),
+    'display_title' => t('JNE Oke'),
+    'shipping_method' => 'jne_shipping_method',
+    'price_component' => 'shipping',
+    'callbacks' => array(
+      'rate' => 'commerce_shipping_jne_oke_service_rate',
+      'details_form' => 'commerce_shipping_jne_service_details_form',
+    ),
+  );
+
+  return $shipping_services;
+}
+
+/**
+ * Shipping service callback: returns a base price array for a shipping service
+ * calculated for the given order.
+ */
+function commerce_shipping_jne_yes_service_rate($shipping_service, $order) {
+  $weight = commerce_physical_order_weight($order->order_number,'kg');
+  $ship = commerce_customer_profile_load($order->commerce_customer_shipping['und'][0]['profile_id']);
+  $city = $ship->commerce_customer_address['und'][0]['locality'];
+  $result = db_select("shipping_jne_yes","j")
+  ->fields("j")
+  ->condition('city', $city,'=')
+  ->execute()->fetch();
+  $total = $weight['weight']*$result->price;
+  
+  return array(
+    'amount' => $total,
+    'currency_code' => 'IDR',
+    'data' => array(),
+  );
+}
+function commerce_shipping_jne_reg_service_rate($shipping_service, $order) {
+  $weight = commerce_physical_order_weight($order->order_number,'kg');
+  $ship = commerce_customer_profile_load($order->commerce_customer_shipping['und'][0]['profile_id']);
+  $city = $ship->commerce_customer_address['und'][0]['locality'];
+  $result = db_select("shipping_jne_reg","j")
+  ->fields("j")
+  ->condition('city', $city,'=')
+  ->execute()->fetch();
+  $total = $weight['weight']*$result->price;
+  
+  return array(
+    'amount' => $total,
+    'currency_code' => 'IDR',
+    'data' => array(),
+  );
+}
+function commerce_shipping_jne_oke_service_rate($shipping_service, $order) {
+  $weight = commerce_physical_order_weight($order->order_number,'kg');
+  $ship = commerce_customer_profile_load($order->commerce_customer_shipping['und'][0]['profile_id']);
+  $city = $ship->commerce_customer_address['und'][0]['locality'];
+  $result = db_select("shipping_jne_oke","j")
+  ->fields("j")
+  ->condition('city', $city,'=')
+  ->execute()->fetch();
+  
+  return array(
+    'amount' => $weight['weight']*$result->price,
+    'currency_code' => 'IDR',
+    'data' => array(),
+  );
+}
+function commerce_shipping_jne_service_details_form($pane_form, $pane_values, $checkout_pane, $order, $shipping_service) {
+  if($shipping_service['name']=='shipping_jne_yes'){
+    $markup = "Yakin Esok Sampai";
+  }else{
+    $ship = commerce_customer_profile_load($order->commerce_customer_shipping['und'][0]['profile_id']);
+    $city = $ship->commerce_customer_address['und'][0]['locality'];
+    $result = db_select($shipping_service['name'],"j")
+    ->fields("j")
+    ->condition('city', $city,'=')
+    ->execute()->fetch();
+    $markup = "Estimated delivery time: ".$result->ETD." days";
+  }
+  
+  $form = array();
+  $pane_values['service_details'] += array(
+    'name' => 'Estimated Delivery Time',
+  );
+  $form['name'] = array(
+    '#markup' => $markup,
+  );
+
+  return $form;
+}
